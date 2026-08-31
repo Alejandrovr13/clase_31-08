@@ -21,7 +21,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # Se usan solo si la API no trae la latitud/longitud de la estación.
 # ------------------------------------------------------------------
 LAT_DEFECTO = 6.15717
-LON_DEFECTO = --75.37298
+LON_DEFECTO = -75.37298
 
 API_BASE_URL = "https://marco.cornare.gov.co/api/v1/estaciones"
 
