@@ -16,14 +16,11 @@ import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# ------------------------------------------------------------------
-# Coordenadas por defecto (Institución Universitaria Pascual Bravo)
-# Se usan solo si la API no trae la latitud/longitud de la estación.
-# ------------------------------------------------------------------
 LAT_DEFECTO = 5.787
 LON_DEFECTO = -75.4295
 
 API_BASE_URL = "https://marco.cornare.gov.co/api/v1/estaciones"
+URL_DOCUMENTO_CORNARE = "https://www.cornare.gov.co/PORH/Informe_Final_Implementacion_PORH_2022final_anexos.pdf"
 
 LLAVE_FECHA = "level_date"
 LLAVE_VALOR = "level"
@@ -33,9 +30,6 @@ CANDIDATOS_LON = ["lng", "lon", "longitude", "longitud"]
 st.set_page_config(page_title="Estacion Abejorral, Quebrada La Aduanilla", page_icon="🌊", layout="wide")
 
 
-# ------------------------------------------------------------------
-# Funciones de consulta
-# ------------------------------------------------------------------
 def obtener_serie_nivel(codigo_estacion, desde, hasta, calidad=1, timeout=30):
     url = f"{API_BASE_URL}/{codigo_estacion}/nivel"
     params = {"desde": desde, "hasta": hasta, "calidad": calidad}
@@ -69,7 +63,6 @@ def obtener_todas_las_paginas(datos_json, timeout=30):
 
 
 def detectar_coordenadas(datos_json):
-    """Busca lat/lon en las llaves raíz de la respuesta. Si no las encuentra, usa el valor por defecto."""
     if not isinstance(datos_json, dict):
         return LAT_DEFECTO, LON_DEFECTO, False
 
@@ -85,7 +78,6 @@ def detectar_coordenadas(datos_json):
 
 
 def calcular_indice_calidad(df):
-    """Índice simple (0-100) combinando completitud de la serie y proporción de outliers."""
     if df.empty or len(df) < 2:
         return 0.0, 0, 0
 
@@ -110,9 +102,6 @@ def calcular_indice_calidad(df):
     return round(indice, 1), int(huecos), int(es_outlier.sum())
 
 
-# ------------------------------------------------------------------
-# Sidebar — parámetros de la consulta (editables por cada estudiante)
-# ------------------------------------------------------------------
 st.sidebar.header("Parámetros de tu consulta")
 nombre_estudiante = st.sidebar.text_input("Nombre del estudiante", "Alejandro Vizcaino Restrepo")
 codigo_estacion = st.sidebar.text_input("Código de estación", "41")
@@ -121,12 +110,13 @@ fecha_hasta = st.sidebar.date_input("Hasta", pd.to_datetime("2026-08-31")).strft
 calidad = st.sidebar.selectbox("Calidad", [1, 0], index=0, help="1 = solo datos validados")
 consultar = st.sidebar.button("🔍 Consultar", type="primary")
 
+st.sidebar.markdown("---")
+st.sidebar.subheader("📄 Documento CORNARE")
+st.sidebar.link_button("Consultar documento PORH 2022", URL_DOCUMENTO_CORNARE)
+
 st.title("🌊 Red de agua del Abejorral, Quebrada La Aduanilla")
 st.caption(f"Estudiante: **{nombre_estudiante}** · Estación: **{codigo_estacion}**")
 
-# ------------------------------------------------------------------
-# Consulta y procesamiento
-# ------------------------------------------------------------------
 if consultar:
     with st.spinner("Consultando la API..."):
         datos_crudos, error = obtener_serie_nivel(codigo_estacion, fecha_desde, fecha_hasta, calidad)
@@ -148,30 +138,25 @@ if consultar:
             lat, lon, coords_reales = detectar_coordenadas(datos_crudos)
             indice_calidad, huecos, n_outliers = calcular_indice_calidad(df)
 
-            # --- Métricas principales ---
             col1, col2, col3, col4 = st.columns(4)
             col1.metric("Lecturas", len(df))
             col2.metric("Nivel promedio", f"{df['nivel'].mean():.2f}")
             col3.metric("Índice de calidad", f"{indice_calidad} / 100")
             col4.metric("Outliers detectados", n_outliers)
 
-            # --- Gráfico de la serie ---
             st.subheader("Serie de nivel")
             st.line_chart(df.set_index("fecha")["nivel"])
 
-            # --- Mapa de la estación ---
             st.subheader("Ubicación de la estación")
             if not coords_reales:
                 st.caption("La API no trajo latitud/longitud de la estación — se muestra el punto de partida (Pascual Bravo). Ajusta `CANDIDATOS_LAT` / `CANDIDATOS_LON` si conoces el nombre real de esas llaves.")
             st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}), zoom=10)
 
-            # --- Detalle de calidad ---
             with st.expander("Detalle del índice de calidad"):
                 st.write(f"- Huecos de reporte detectados: **{huecos}**")
                 st.write(f"- Outliers (IQR + nivel negativo): **{n_outliers}** de {len(df)} lecturas")
                 st.write("El índice combina completitud de la serie (70%) y proporción de datos sin outliers (30%).")
 
-            # --- Tabla y descarga ---
             with st.expander("Ver datos crudos"):
                 st.dataframe(df, use_container_width=True)
 
