@@ -31,7 +31,8 @@ st.set_page_config(page_title="Estacion Abejorral, Quebrada La Aduanilla", page_
 st.imagen(
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTmEJbWfs5eD2K-Qcpocl9u47bKqy_V5091dzGEIvzP1yGx6mIG_vjy5P8&s=10",
     width =250
-)
+    
+);
 
 
 def obtener_serie_nivel(codigo_estacion, desde, hasta, calidad=1, timeout=30):
