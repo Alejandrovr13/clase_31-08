@@ -27,7 +27,7 @@ LLAVE_VALOR = "level"
 CANDIDATOS_LAT = ["lat", "latitude", "latitud"]
 CANDIDATOS_LON = ["lng", "lon", "longitude", "longitud"]
 
-st.set_page_config(page_title="Estacion Abejorral, Quebrada La Aduanilla", page_icon="🌊", layout="wide")
+st.set_page_config(page_title="Estacion Abejorral, Quebrada La Aduanilla", page_icon="🌊", layout="wide");
 st.imagen(
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTmEJbWfs5eD2K-Qcpocl9u47bKqy_V5091dzGEIvzP1yGx6mIG_vjy5P8&s=10",
     width =250
