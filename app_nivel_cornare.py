@@ -56,37 +56,81 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+    /* ==========================================================
+       CORRECCIÓN DE COLORES / TEMA
+       Evita que Streamlit herede texto blanco sobre fondo claro.
+       ========================================================== */
 
-    /* Fondo principal */
     .stApp {
-        background-color: #f4f8fb;
+        background-color: #f4f8fb !important;
+        color: #1f2937 !important;
+    }
+
+    /* Texto general de la aplicación */
+    .stApp p,
+    .stApp label,
+    .stApp span,
+    .stApp div,
+    .stApp li,
+    .stApp td,
+    .stApp th {
+        color: #1f2937;
     }
 
     /* Sidebar */
     [data-testid="stSidebar"] {
-        background-color: #e4f3f8;
+        background-color: #e4f3f8 !important;
         border-right: 2px solid #b9dce7;
     }
 
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] .stMarkdown {
+        color: #174a5b !important;
+    }
+
     /* Títulos */
-    h1 {
-        color: #075a75;
-        font-weight: 700;
+    h1,
+    [data-testid="stHeading"] h1 {
+        color: #075a75 !important;
+        font-weight: 700 !important;
     }
 
-    h2 {
-        color: #087a9c;
-        font-weight: 600;
+    h2,
+    [data-testid="stHeading"] h2 {
+        color: #087a9c !important;
+        font-weight: 600 !important;
     }
 
-    h3 {
-        color: #087a9c;
-        font-weight: 600;
+    h3,
+    [data-testid="stHeading"] h3 {
+        color: #087a9c !important;
+        font-weight: 600 !important;
+    }
+
+    /* Inputs del sidebar */
+    [data-testid="stSidebar"] input {
+        color: #ffffff !important;
+        background-color: #0f1117 !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    [data-testid="stSidebar"] [data-baseweb="select"] {
+        color: #ffffff !important;
+        background-color: #0f1117 !important;
+    }
+
+    [data-testid="stSidebar"] [data-baseweb="select"] * {
+        color: #ffffff !important;
     }
 
     /* Métricas */
     [data-testid="stMetric"] {
-        background-color: white;
+        background-color: #ffffff !important;
         padding: 18px;
         border-radius: 12px;
         border: 1px solid #d3e5eb;
@@ -94,12 +138,12 @@ st.markdown(
     }
 
     [data-testid="stMetricLabel"] {
-        color: #52717c;
+        color: #52717c !important;
     }
 
     [data-testid="stMetricValue"] {
-        color: #075a75;
-        font-weight: bold;
+        color: #075a75 !important;
+        font-weight: bold !important;
     }
 
     /* Botones */
@@ -109,16 +153,29 @@ st.markdown(
         border: none;
     }
 
+    .stButton > button p,
+    .stButton > button span {
+        color: inherit !important;
+    }
+
     /* Expanders */
     [data-testid="stExpander"] {
-        background-color: white;
+        background-color: #ffffff !important;
         border: 1px solid #d3e5eb;
         border-radius: 10px;
+    }
+
+    [data-testid="stExpander"] * {
+        color: #1f2937;
     }
 
     /* Mensajes */
     [data-testid="stAlert"] {
         border-radius: 10px;
+    }
+
+    [data-testid="stAlert"] * {
+        color: #1f2937 !important;
     }
 
     /* Tabla */
@@ -131,7 +188,6 @@ st.markdown(
     hr {
         border-color: #c6e1e8;
     }
-
     </style>
     """,
     unsafe_allow_html=True
