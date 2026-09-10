@@ -16,37 +16,196 @@ import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# ------------------------------------------------------------------
+# CONFIGURACIÓN
+# ------------------------------------------------------------------
+
 LAT_DEFECTO = 5.787
 LON_DEFECTO = -75.4295
 
 API_BASE_URL = "https://marco.cornare.gov.co/api/v1/estaciones"
-URL_DOCUMENTO_CORNARE = "https://www.cornare.gov.co/PORH/Informe_Final_Implementacion_PORH_2022final_anexos.pdf"
+
+URL_DOCUMENTO_CORNARE = (
+    "https://www.cornare.gov.co/PORH/"
+    "Informe_Final_Implementacion_PORH_2022final_anexos.pdf"
+)
 
 LLAVE_FECHA = "level_date"
 LLAVE_VALOR = "level"
+
 CANDIDATOS_LAT = ["lat", "latitude", "latitud"]
 CANDIDATOS_LON = ["lng", "lon", "longitude", "longitud"]
 
-st.set_page_config(page_title="Estacion Abejorral, Quebrada La Aduanilla", page_icon="🌊", layout="wide");
+
+# ------------------------------------------------------------------
+# CONFIGURACIÓN DE STREAMLIT
+# ------------------------------------------------------------------
+
+st.set_page_config(
+    page_title="Estación Abejorral",
+    page_icon="🌊",
+    layout="wide"
+)
+
+
+# ------------------------------------------------------------------
+# ESTILOS DE LA PÁGINA
+# ------------------------------------------------------------------
+
+st.markdown(
+    """
+    <style>
+
+    /* Fondo general */
+    .stApp {
+        background-color: #f4f8fb;
+    }
+
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #e5f3f8;
+        border-right: 2px solid #c6e4ed;
+    }
+
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3 {
+        color: #075a75;
+    }
+
+    /* Títulos */
+    h1 {
+        color: #075a75;
+        font-weight: 700;
+    }
+
+    h2 {
+        color: #087a9c;
+    }
+
+    h3 {
+        color: #087a9c;
+    }
+
+    /* Texto */
+    p {
+        color: #425b65;
+    }
+
+    /* Tarjetas de métricas */
+    [data-testid="stMetric"] {
+        background-color: white;
+        padding: 18px;
+        border-radius: 14px;
+        border: 1px solid #d6e7ed;
+        box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    [data-testid="stMetricLabel"] {
+        color: #55717c;
+        font-size: 14px;
+    }
+
+    [data-testid="stMetricValue"] {
+        color: #075a75;
+        font-weight: bold;
+    }
+
+    /* Botones */
+    .stButton > button {
+        width: 100%;
+        border-radius: 10px;
+        border: none;
+        padding: 10px;
+        font-weight: bold;
+    }
+
+    /* Botón principal */
+    .stButton > button[kind="primary"] {
+        background-color: #087a9c;
+    }
+
+    /* Expanders */
+    [data-testid="stExpander"] {
+        background-color: white;
+        border: 1px solid #d6e7ed;
+        border-radius: 12px;
+    }
+
+    /* Alertas */
+    [data-testid="stAlert"] {
+        border-radius: 10px;
+    }
+
+    /* Tabla */
+    [data-testid="stDataFrame"] {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    /* Separador */
+    hr {
+        border-color: #c6e4ed;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# ------------------------------------------------------------------
+# IMAGEN
+# ------------------------------------------------------------------
+
 st.image(
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTmEJbWfs5eD2K-Qcpocl9u47bKqy_V5091dzGEIvzP1yGx6mIG_vjy5P8&s=10",
-    width =250
-    
-);
+    width=250
+)
 
 
-def obtener_serie_nivel(codigo_estacion, desde, hasta, calidad=1, timeout=30):
+# ------------------------------------------------------------------
+# FUNCIONES
+# ------------------------------------------------------------------
+
+def obtener_serie_nivel(
+    codigo_estacion,
+    desde,
+    hasta,
+    calidad=1,
+    timeout=30
+):
     url = f"{API_BASE_URL}/{codigo_estacion}/nivel"
-    params = {"desde": desde, "hasta": hasta, "calidad": calidad}
+
+    params = {
+        "desde": desde,
+        "hasta": hasta,
+        "calidad": calidad
+    }
+
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        ),
         "Accept": "application/json, text/plain, */*",
     }
+
     try:
-        resp = requests.get(url, params=params, headers=headers, timeout=timeout, verify=False)
+        resp = requests.get(
+            url,
+            params=params,
+            headers=headers,
+            timeout=timeout,
+            verify=False
+        )
+
         if resp.status_code == 200:
             return resp.json(), None
+
         return None, f"HTTP {resp.status_code}"
+
     except requests.exceptions.RequestException as e:
         return None, f"Error de red: {e}"
 
@@ -54,118 +213,421 @@ def obtener_serie_nivel(codigo_estacion, desde, hasta, calidad=1, timeout=30):
 def obtener_todas_las_paginas(datos_json, timeout=30):
     registros = list(datos_json.get("values", []))
     siguiente_url = datos_json.get("next")
+
     while siguiente_url:
         try:
-            resp = requests.get(siguiente_url, timeout=timeout, verify=False)
+            resp = requests.get(
+                siguiente_url,
+                timeout=timeout,
+                verify=False
+            )
+
         except requests.exceptions.RequestException:
             break
+
         if resp.status_code != 200:
             break
+
         pagina = resp.json()
-        registros.extend(pagina.get("values", []))
+
+        registros.extend(
+            pagina.get("values", [])
+        )
+
         siguiente_url = pagina.get("next")
+
     return registros
 
 
 def detectar_coordenadas(datos_json):
+
     if not isinstance(datos_json, dict):
         return LAT_DEFECTO, LON_DEFECTO, False
 
-    lat = next((datos_json[k] for k in CANDIDATOS_LAT if k in datos_json), None)
-    lon = next((datos_json[k] for k in CANDIDATOS_LON if k in datos_json), None)
+    lat = next(
+        (
+            datos_json[k]
+            for k in CANDIDATOS_LAT
+            if k in datos_json
+        ),
+        None
+    )
+
+    lon = next(
+        (
+            datos_json[k]
+            for k in CANDIDATOS_LON
+            if k in datos_json
+        ),
+        None
+    )
 
     if lat is not None and lon is not None:
         try:
             return float(lat), float(lon), True
+
         except (TypeError, ValueError):
             pass
+
     return LAT_DEFECTO, LON_DEFECTO, False
 
 
 def calcular_indice_calidad(df):
+
     if df.empty or len(df) < 2:
         return 0.0, 0, 0
 
     df_idx = df.set_index("fecha")
-    frecuencia_tipica = df["fecha"].diff().dropna().mode()
+
+    frecuencia_tipica = (
+        df["fecha"]
+        .diff()
+        .dropna()
+        .mode()
+    )
+
     if len(frecuencia_tipica) == 0:
         return 0.0, 0, 0
+
     frecuencia_tipica = frecuencia_tipica[0]
 
-    rango_completo = pd.date_range(start=df_idx.index.min(), end=df_idx.index.max(), freq=frecuencia_tipica)
-    esperados = len(rango_completo)
-    huecos = esperados - len(df_idx)
-    completitud = max(0.0, 1 - (huecos / esperados)) if esperados > 0 else 0.0
+    rango_completo = pd.date_range(
+        start=df_idx.index.min(),
+        end=df_idx.index.max(),
+        freq=frecuencia_tipica
+    )
 
-    Q1, Q3 = df["nivel"].quantile(0.25), df["nivel"].quantile(0.75)
+    esperados = len(rango_completo)
+
+    huecos = esperados - len(df_idx)
+
+    if esperados > 0:
+        completitud = max(
+            0.0,
+            1 - (huecos / esperados)
+        )
+    else:
+        completitud = 0.0
+
+    Q1 = df["nivel"].quantile(0.25)
+    Q3 = df["nivel"].quantile(0.75)
+
     IQR = Q3 - Q1
-    lim_inf, lim_sup = Q1 - 1.5 * IQR, Q3 + 1.5 * IQR
-    es_outlier = (df["nivel"] < lim_inf) | (df["nivel"] > lim_sup) | (df["nivel"] < 0)
+
+    lim_inf = Q1 - 1.5 * IQR
+    lim_sup = Q3 + 1.5 * IQR
+
+    es_outlier = (
+        (df["nivel"] < lim_inf)
+        | (df["nivel"] > lim_sup)
+        | (df["nivel"] < 0)
+    )
+
     proporcion_outliers = es_outlier.mean()
 
-    indice = (completitud * 0.7 + (1 - proporcion_outliers) * 0.3) * 100
-    return round(indice, 1), int(huecos), int(es_outlier.sum())
+    indice = (
+        completitud * 0.7
+        + (1 - proporcion_outliers) * 0.3
+    ) * 100
+
+    return (
+        round(indice, 1),
+        int(huecos),
+        int(es_outlier.sum())
+    )
 
 
-st.sidebar.header("Parámetros de tu consulta")
-nombre_estudiante = st.sidebar.text_input("Nombre del estudiante", "Alejandro Vizcaino Restrepo")
-codigo_estacion = st.sidebar.text_input("Código de estación", "41")
-fecha_desde = st.sidebar.date_input("Desde", pd.to_datetime("2026-08-25")).strftime("%Y-%m-%d")
-fecha_hasta = st.sidebar.date_input("Hasta", pd.to_datetime("2026-08-31")).strftime("%Y-%m-%d")
-calidad = st.sidebar.selectbox("Calidad", [1, 0], index=0, help="1 = solo datos validados")
-consultar = st.sidebar.button("🔍 Consultar", type="primary")
+# ------------------------------------------------------------------
+# SIDEBAR
+# ------------------------------------------------------------------
+
+st.sidebar.header("⚙️ Parámetros de consulta")
+
+nombre_estudiante = st.sidebar.text_input(
+    "👨‍💻 Nombre del estudiante",
+    "Alejandro Vizcaino Restrepo"
+)
+
+codigo_estacion = st.sidebar.text_input(
+    "📍 Código de estación",
+    "41"
+)
+
+fecha_desde = st.sidebar.date_input(
+    "📅 Desde",
+    pd.to_datetime("2026-08-25")
+).strftime("%Y-%m-%d")
+
+fecha_hasta = st.sidebar.date_input(
+    "📅 Hasta",
+    pd.to_datetime("2026-08-31")
+).strftime("%Y-%m-%d")
+
+calidad = st.sidebar.selectbox(
+    "🔎 Calidad",
+    [1, 0],
+    index=0,
+    help="1 = solo datos validados"
+)
+
+consultar = st.sidebar.button(
+    "🔍 Consultar datos",
+    type="primary"
+)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("📄 Documento CORNARE")
-st.sidebar.link_button("Consultar documento PORH 2022", URL_DOCUMENTO_CORNARE)
 
-st.title("🌊 Red de agua del Abejorral, Quebrada La Aduanilla")
-st.caption(f"Estudiante: **{nombre_estudiante}** · Estación: **{codigo_estacion}**")
+st.sidebar.subheader("📄 Documento CORNARE")
+
+st.sidebar.link_button(
+    "📖 Consultar documento PORH 2022",
+    URL_DOCUMENTO_CORNARE
+)
+
+
+# ------------------------------------------------------------------
+# ENCABEZADO PRINCIPAL
+# ------------------------------------------------------------------
+
+st.markdown(
+    """
+    <div style="
+        background-color: white;
+        padding: 25px;
+        border-radius: 15px;
+        border: 1px solid #d6e7ed;
+        margin-bottom: 20px;
+        box-shadow: 0px 3px 8px rgba(0,0,0,0.08);
+    ">
+
+        <h1 style="
+            color: #075a75;
+            margin-bottom: 5px;
+        ">
+            🌊 Red de agua del Abejorral
+        </h1>
+
+        <p style="
+            color: #52717c;
+            font-size: 18px;
+            margin-bottom: 0px;
+        ">
+            Quebrada La Aduanilla
+        </p>
+
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+st.caption(
+    f"👨‍💻 Estudiante: **{nombre_estudiante}** · "
+    f"📍 Estación: **{codigo_estacion}**"
+)
+
+
+# ------------------------------------------------------------------
+# CONSULTA
+# ------------------------------------------------------------------
 
 if consultar:
-    with st.spinner("Consultando la API..."):
-        datos_crudos, error = obtener_serie_nivel(codigo_estacion, fecha_desde, fecha_hasta, calidad)
+
+    with st.spinner("🌊 Consultando la API de CORNARE..."):
+
+        datos_crudos, error = obtener_serie_nivel(
+            codigo_estacion,
+            fecha_desde,
+            fecha_hasta,
+            calidad
+        )
 
     if error:
+
         st.error(f"❌ {error}")
+
     else:
-        registros = obtener_todas_las_paginas(datos_crudos)
+
+        registros = obtener_todas_las_paginas(
+            datos_crudos
+        )
 
         if not registros:
-            st.warning("No hay registros para esta estación y rango de fechas. Prueba otro código u otro rango.")
-        else:
-            df = pd.DataFrame(registros)
-            df = df.rename(columns={LLAVE_FECHA: "fecha", LLAVE_VALOR: "nivel"})
-            df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
-            df["nivel"] = pd.to_numeric(df["nivel"], errors="coerce")
-            df = df.dropna(subset=["fecha", "nivel"]).sort_values("fecha").reset_index(drop=True)
 
-            lat, lon, coords_reales = detectar_coordenadas(datos_crudos)
-            indice_calidad, huecos, n_outliers = calcular_indice_calidad(df)
+            st.warning(
+                "⚠️ No hay registros para esta estación "
+                "y rango de fechas. Prueba otro código "
+                "u otro rango."
+            )
+
+        else:
+
+            # ------------------------------------------------------
+            # PREPARAR DATOS
+            # ------------------------------------------------------
+
+            df = pd.DataFrame(registros)
+
+            df = df.rename(
+                columns={
+                    LLAVE_FECHA: "fecha",
+                    LLAVE_VALOR: "nivel"
+                }
+            )
+
+            df["fecha"] = pd.to_datetime(
+                df["fecha"],
+                errors="coerce"
+            )
+
+            df["nivel"] = pd.to_numeric(
+                df["nivel"],
+                errors="coerce"
+            )
+
+            df = (
+                df
+                .dropna(subset=["fecha", "nivel"])
+                .sort_values("fecha")
+                .reset_index(drop=True)
+            )
+
+            # ------------------------------------------------------
+            # CÁLCULOS
+            # ------------------------------------------------------
+
+            lat, lon, coords_reales = detectar_coordenadas(
+                datos_crudos
+            )
+
+            indice_calidad, huecos, n_outliers = (
+                calcular_indice_calidad(df)
+            )
+
+            # ------------------------------------------------------
+            # MÉTRICAS
+            # ------------------------------------------------------
+
+            st.subheader("📊 Resumen de la estación")
 
             col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Lecturas", len(df))
-            col2.metric("Nivel promedio", f"{df['nivel'].mean():.2f}")
-            col3.metric("Índice de calidad", f"{indice_calidad} / 100")
-            col4.metric("Outliers detectados", n_outliers)
 
-            st.subheader("Serie de nivel")
-            st.line_chart(df.set_index("fecha")["nivel"])
+            col1.metric(
+                "📈 Lecturas",
+                len(df)
+            )
 
-            st.subheader("Ubicación de la estación")
+            col2.metric(
+                "💧 Nivel promedio",
+                f"{df['nivel'].mean():.2f}"
+            )
+
+            col3.metric(
+                "✅ Índice de calidad",
+                f"{indice_calidad} / 100"
+            )
+
+            col4.metric(
+                "⚠️ Outliers detectados",
+                n_outliers
+            )
+
+            # ------------------------------------------------------
+            # GRÁFICA
+            # ------------------------------------------------------
+
+            st.subheader("📈 Serie de nivel")
+
+            st.line_chart(
+                df.set_index("fecha")["nivel"]
+            )
+
+            # ------------------------------------------------------
+            # UBICACIÓN
+            # ------------------------------------------------------
+
+            st.subheader("📍 Ubicación de la estación")
+
             if not coords_reales:
-                st.caption("La API no trajo latitud/longitud de la estación — se muestra el punto de partida (Pascual Bravo). Ajusta `CANDIDATOS_LAT` / `CANDIDATOS_LON` si conoces el nombre real de esas llaves.")
-            st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}), zoom=10)
 
-            with st.expander("Detalle del índice de calidad"):
-                st.write(f"- Huecos de reporte detectados: **{huecos}**")
-                st.write(f"- Outliers (IQR + nivel negativo): **{n_outliers}** de {len(df)} lecturas")
-                st.write("El índice combina completitud de la serie (70%) y proporción de datos sin outliers (30%).")
+                st.caption(
+                    "⚠️ La API no trajo latitud/longitud "
+                    "de la estación. Se muestra el punto "
+                    "de partida (Pascual Bravo). Ajusta "
+                    "`CANDIDATOS_LAT` / `CANDIDATOS_LON` "
+                    "si conoces el nombre real de esas llaves."
+                )
 
-            with st.expander("Ver datos crudos"):
-                st.dataframe(df, use_container_width=True)
+            mapa_df = pd.DataFrame(
+                {
+                    "lat": [lat],
+                    "lon": [lon]
+                }
+            )
 
-            csv = df.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Descargar CSV", csv, file_name=f"nivel_estacion_{codigo_estacion}.csv", mime="text/csv")
+            st.map(
+                mapa_df,
+                zoom=10
+            )
+
+            # ------------------------------------------------------
+            # DETALLE DEL ÍNDICE
+            # ------------------------------------------------------
+
+            with st.expander(
+                "🔎 Detalle del índice de calidad"
+            ):
+
+                st.write(
+                    f"• Huecos de reporte detectados: "
+                    f"**{huecos}**"
+                )
+
+                st.write(
+                    f"• Outliers (IQR + nivel negativo): "
+                    f"**{n_outliers}** de "
+                    f"**{len(df)}** lecturas"
+                )
+
+                st.write(
+                    "El índice combina completitud de la "
+                    "serie (70%) y proporción de datos "
+                    "sin outliers (30%)."
+                )
+
+            # ------------------------------------------------------
+            # DATOS CRUDOS
+            # ------------------------------------------------------
+
+            with st.expander(
+                "📋 Ver datos crudos"
+            ):
+
+                st.dataframe(
+                    df,
+                    use_container_width=True
+                )
+
+            # ------------------------------------------------------
+            # DESCARGAR CSV
+            # ------------------------------------------------------
+
+            csv = df.to_csv(
+                index=False
+            ).encode("utf-8")
+
+            st.download_button(
+                "⬇️ Descargar datos en CSV",
+                csv,
+                file_name=(
+                    f"nivel_estacion_"
+                    f"{codigo_estacion}.csv"
+                ),
+                mime="text/csv"
+            )
+
 else:
-    st.info("Ajusta los parámetros en el sidebar y presiona **Consultar**.")
+
+    st.info(
+        "👈 Ajusta los parámetros en el sidebar "
+        "y presiona **Consultar datos**."
+    )
