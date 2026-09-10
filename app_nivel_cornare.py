@@ -14,11 +14,12 @@ import numpy as np
 import streamlit as st
 import urllib3
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ------------------------------------------------------------------
 # CONFIGURACIÓN
 # ------------------------------------------------------------------
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 LAT_DEFECTO = 5.787
 LON_DEFECTO = -75.4295
@@ -49,28 +50,22 @@ st.set_page_config(
 
 
 # ------------------------------------------------------------------
-# ESTILOS DE LA PÁGINA
+# ESTILOS
 # ------------------------------------------------------------------
 
 st.markdown(
     """
     <style>
 
-    /* Fondo general */
+    /* Fondo principal */
     .stApp {
         background-color: #f4f8fb;
     }
 
     /* Sidebar */
     [data-testid="stSidebar"] {
-        background-color: #e5f3f8;
-        border-right: 2px solid #c6e4ed;
-    }
-
-    [data-testid="stSidebar"] h1,
-    [data-testid="stSidebar"] h2,
-    [data-testid="stSidebar"] h3 {
-        color: #075a75;
+        background-color: #e4f3f8;
+        border-right: 2px solid #b9dce7;
     }
 
     /* Títulos */
@@ -81,29 +76,25 @@ st.markdown(
 
     h2 {
         color: #087a9c;
+        font-weight: 600;
     }
 
     h3 {
         color: #087a9c;
+        font-weight: 600;
     }
 
-    /* Texto */
-    p {
-        color: #425b65;
-    }
-
-    /* Tarjetas de métricas */
+    /* Métricas */
     [data-testid="stMetric"] {
         background-color: white;
         padding: 18px;
-        border-radius: 14px;
-        border: 1px solid #d6e7ed;
-        box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.08);
+        border-radius: 12px;
+        border: 1px solid #d3e5eb;
+        box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.07);
     }
 
     [data-testid="stMetricLabel"] {
-        color: #55717c;
-        font-size: 14px;
+        color: #52717c;
     }
 
     [data-testid="stMetricValue"] {
@@ -113,26 +104,19 @@ st.markdown(
 
     /* Botones */
     .stButton > button {
-        width: 100%;
         border-radius: 10px;
+        font-weight: 600;
         border: none;
-        padding: 10px;
-        font-weight: bold;
-    }
-
-    /* Botón principal */
-    .stButton > button[kind="primary"] {
-        background-color: #087a9c;
     }
 
     /* Expanders */
     [data-testid="stExpander"] {
         background-color: white;
-        border: 1px solid #d6e7ed;
-        border-radius: 12px;
+        border: 1px solid #d3e5eb;
+        border-radius: 10px;
     }
 
-    /* Alertas */
+    /* Mensajes */
     [data-testid="stAlert"] {
         border-radius: 10px;
     }
@@ -143,9 +127,9 @@ st.markdown(
         overflow: hidden;
     }
 
-    /* Separador */
+    /* Separadores */
     hr {
-        border-color: #c6e4ed;
+        border-color: #c6e1e8;
     }
 
     </style>
@@ -215,6 +199,7 @@ def obtener_todas_las_paginas(datos_json, timeout=30):
     siguiente_url = datos_json.get("next")
 
     while siguiente_url:
+
         try:
             resp = requests.get(
                 siguiente_url,
@@ -263,6 +248,7 @@ def detectar_coordenadas(datos_json):
     )
 
     if lat is not None and lon is not None:
+
         try:
             return float(lat), float(lon), True
 
@@ -301,21 +287,19 @@ def calcular_indice_calidad(df):
 
     huecos = esperados - len(df_idx)
 
-    if esperados > 0:
-        completitud = max(
-            0.0,
-            1 - (huecos / esperados)
-        )
-    else:
-        completitud = 0.0
+    completitud = (
+        max(0.0, 1 - (huecos / esperados))
+        if esperados > 0
+        else 0.0
+    )
 
-    Q1 = df["nivel"].quantile(0.25)
-    Q3 = df["nivel"].quantile(0.75)
+    q1 = df["nivel"].quantile(0.25)
+    q3 = df["nivel"].quantile(0.75)
 
-    IQR = Q3 - Q1
+    iqr = q3 - q1
 
-    lim_inf = Q1 - 1.5 * IQR
-    lim_sup = Q3 + 1.5 * IQR
+    lim_inf = q1 - 1.5 * iqr
+    lim_sup = q3 + 1.5 * iqr
 
     es_outlier = (
         (df["nivel"] < lim_inf)
@@ -386,44 +370,19 @@ st.sidebar.link_button(
 
 
 # ------------------------------------------------------------------
-# ENCABEZADO PRINCIPAL
+# ENCABEZADO
 # ------------------------------------------------------------------
 
-st.markdown(
-    """
-    <div style="
-        background-color: white;
-        padding: 25px;
-        border-radius: 15px;
-        border: 1px solid #d6e7ed;
-        margin-bottom: 20px;
-        box-shadow: 0px 3px 8px rgba(0,0,0,0.08);
-    ">
+st.title("🌊 Red de agua del Abejorral")
 
-        <h1 style="
-            color: #075a75;
-            margin-bottom: 5px;
-        ">
-            🌊 Red de agua del Abejorral
-        </h1>
-
-        <p style="
-            color: #52717c;
-            font-size: 18px;
-            margin-bottom: 0px;
-        ">
-            Quebrada La Aduanilla
-        </p>
-
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+st.subheader("Quebrada La Aduanilla")
 
 st.caption(
-    f"👨‍💻 Estudiante: **{nombre_estudiante}** · "
-    f"📍 Estación: **{codigo_estacion}**"
+    f"👨‍💻 Estudiante: **{nombre_estudiante}** "
+    f"· 📍 Estación: **{codigo_estacion}**"
 )
+
+st.markdown("---")
 
 
 # ------------------------------------------------------------------
@@ -486,7 +445,9 @@ if consultar:
 
             df = (
                 df
-                .dropna(subset=["fecha", "nivel"])
+                .dropna(
+                    subset=["fecha", "nivel"]
+                )
                 .sort_values("fecha")
                 .reset_index(drop=True)
             )
@@ -552,9 +513,7 @@ if consultar:
                 st.caption(
                     "⚠️ La API no trajo latitud/longitud "
                     "de la estación. Se muestra el punto "
-                    "de partida (Pascual Bravo). Ajusta "
-                    "`CANDIDATOS_LAT` / `CANDIDATOS_LON` "
-                    "si conoces el nombre real de esas llaves."
+                    "de partida (Pascual Bravo)."
                 )
 
             mapa_df = pd.DataFrame(
